@@ -1,2 +1,2 @@
-# my-first-ai-project
-我的第一个AI应用
+# my-ai-project
+我的AI应用
