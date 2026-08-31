@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>⌨️ 打字练习器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f0f4ff;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .sentence {
+            font-size: 24px;
+            line-height: 2;
+            padding: 20px;
+            background: #f8faff;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+        .char-correct { color: #22c55e; }
+        .char-wrong { color: #ef4444; }
+        .char-pending { color: #94a3b8; }
+        textarea {
+            width: 100%;
+            height: 100px;
+            font-size: 20px;
+            padding: 12px;
+            border: 2px solid #d1d5db;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            resize: none;
+        }
+        textarea:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+        }
+        .stats span {
+            background: #eef2ff;
+            padding: 6px 16px;
+            border-radius: 20px;
+        }
+        .btn {
+            margin-top: 15px;
+            padding: 10px 30px;
+            font-size: 16px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .btn:hover { background: #2563eb; }
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f1f5f9;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>⌨️ 打字练习器</h2>
+    <div id="sentenceDisplay" class="sentence"></div>
+    <textarea id="inputArea" placeholder="在这里打字..." disabled></textarea>
+    <div class="stats">
+        <span>✅ 正确: <b id="correctCount">0</b></span>
+        <span>❌ 错误: <b id="wrongCount">0</b></span>
+        <span>⏱️ 用时: <b id="timeDisplay">0</b>s</span>
+        <span>🚀 速度: <b id="speedDisplay">0</b> 字/分</span>
+    </div>
+    <button class="btn" id="startBtn">🚀 开始练习</button>
+    <div id="resultMessage" class="result"></div>
+</div>
+
+<script>
+    const SENTENCES = [
+        "The quick brown fox jumps over the lazy dog.",
+        "Practice makes perfect, keep going.",
+        "Hello world, this is my first typing game.",
+        "Coding is fun and creative.",
+        "Never give up on your dreams.",
+        "you are doing great,keep it up!"
+    ];
+
+    let currentSentence = "";
+    let startTime = null;
+    let timerInterval = null;
+    let isFinished = false;
+
+    const displayEl = document.getElementById('sentenceDisplay');
+    const inputArea = document.getElementById('inputArea');
+    const correctCountEl = document.getElementById('correctCount');
+    const wrongCountEl = document.getElementById('wrongCount');
+    const timeDisplayEl = document.getElementById('timeDisplay');
+    const speedDisplayEl = document.getElementById('speedDisplay');
+    const startBtn = document.getElementById('startBtn');
+    const resultMsg = document.getElementById('resultMessage');
+
+    function pickSentence() {
+        const idx = Math.floor(Math.random() * SENTENCES.length);
+        return SENTENCES[idx];
+    }
+
+    function renderSentence(typedText) {
+        let html = '';
+        const chars = currentSentence.split('');
+        const typedChars = typedText.split('');
+        for (let i = 0; i < chars.length; i++) {
+            let className = 'char-pending';
+            if (i < typedChars.length) {
+                className = (typedChars[i] === chars[i]) ? 'char-correct' : 'char-wrong';
+            }
+            html += `<span class="${className}">${chars[i]}</span>`;
+        }
+        displayEl.innerHTML = html;
+    }
+
+    function updateStats(typedText) {
+        let correct = 0, wrong = 0;
+        const chars = currentSentence.split('');
+        const typedChars = typedText.split('');
+        for (let i = 0; i < typedChars.length && i < chars.length; i++) {
+            if (typedChars[i] === chars[i]) correct++;
+            else wrong++;
+        }
+        correctCountEl.textContent = correct;
+        wrongCountEl.textContent = wrong;
+        if (startTime && typedText.length > 0) {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const speed = Math.round((typedText.length / elapsed) * 60);
+            speedDisplayEl.textContent = speed;
+        }
+    }
+
+    function checkCompletion(typedText) {
+        if (typedText.length >= currentSentence.length && !isFinished) {
+            isFinished = true;
+            const elapsed = (Date.now() - startTime) / 1000;
+            const speed = Math.round((currentSentence.length / elapsed) * 60);
+            resultMsg.style.display = 'block';
+            resultMsg.innerHTML = `🎉 完成！<br>用时 <b>${Math.round(elapsed)}</b> 秒，速度 <b>${speed}</b> 字/分钟`;
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            inputArea.disabled = true;
+        }
+    }
+
+    inputArea.addEventListener('input', function() {
+        if (isFinished) return;
+        const typed = this.value;
+        renderSentence(typed);
+        updateStats(typed);
+        checkCompletion(typed);
+    });
+
+    startBtn.addEventListener('click', function() {
+        isFinished = false;
+        resultMsg.style.display = 'none';
+        resultMsg.innerHTML = '';
+        inputArea.disabled = false;
+        inputArea.value = '';
+        inputArea.focus();
+        currentSentence = pickSentence();
+        renderSentence('');
+        correctCountEl.textContent = '0';
+        wrongCountEl.textContent = '0';
+        speedDisplayEl.textContent = '0';
+        startTime = Date.now();
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            const elapsed = Math.round((Date.now() - startTime) / 1000);
+            timeDisplayEl.textContent = elapsed;
+        }, 1000);
+        startBtn.textContent = '🔄 重新开始';
+    });
+
+    currentSentence = pickSentence();
+    renderSentence('');
+</script>
+</body>
+</html>
